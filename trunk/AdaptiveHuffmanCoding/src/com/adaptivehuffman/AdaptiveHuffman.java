@@ -6,16 +6,40 @@ import java.util.Collections;
 
 public class AdaptiveHuffman {
 	
-	private Node nytNode;//始终指向NYT节点的指针
-	private Node root;//始终指向根节点的指针
-	private char[] codeStr;//传入的待编码的或待解码的字符串
-	private ArrayList<Character> alreadyExist;//存放已经出现过的字符
-	ArrayList<Node> nodeList;//按从左到右，从下到上的顺序存放树中所有节点，主要用于查找编号最大的节点
-	private String tempCode = "";//从树中查找字符编码时用的一个全局变量
+	/**
+	 * A pointer that constantly points the NYT node
+	 */
+	private Node nytNode;
 	
 	/**
-	 * 初始化待编码字符串，NYT节点以及root指针
-	 * @param codeStr 待编码的字符串
+	 * A pointer that constantly points the root node
+	 */
+	private Node root;
+	
+	/**
+	 * the inputting code string that needs to incode or decode
+	 */
+	private char[] codeStr;
+	
+	/**
+	 * stores characters that exist before
+	 */
+	private ArrayList<Character> alreadyExist;
+	
+	/**
+	 * Store all the node in the tree from left to right, from bottom to top.
+	 * Mainly used for find the biggest node in a block
+	 */
+	ArrayList<Node> nodeList;
+	
+	/**
+	 * A global variance used for generating code by tree
+	 */
+	private String tempCode = "";
+	
+	/**
+	 * Initialize input string, nyt node and root pointer.
+	 * @param codeStr the input string
 	 */
 	public AdaptiveHuffman(char[] codeStr){
 		this.codeStr = codeStr;
@@ -30,12 +54,12 @@ public class AdaptiveHuffman {
 	}
 	
 	/**
-	 * 编码算法的主干，可以清楚的看出算法的流程
-	 * @return 所有字符的编码
+	 * The trunk method of encoding. 
+	 * @return all codes of symbols
 	 */
 	public ArrayList<String> encode(){
 		ArrayList<String> result = new ArrayList<String>();
-		result.add("0");//初始时加入一个0代表NEW
+		result.add("0");//Represent NEW
 		char temp = 0;
 		for ( int i=0; i<codeStr.length; i++ ) {
 			temp = codeStr[i];
@@ -46,8 +70,8 @@ public class AdaptiveHuffman {
 	}
 	
 	/**
-	 * 解码算法的主干，可以清楚地看出来算法的流程
-	 * @return 解码后得到的字符串
+	 * The trunk method of decoding. 
+	 * @return code string aftering decoding.
 	 */
 	public String decode(){
 		String result = "";
@@ -87,9 +111,9 @@ public class AdaptiveHuffman {
 	}
 	
 	/**
-	 * 非常重要的一个方法，用于每次读入了一个字符之后更新整个树的结构。编码跟解码都
-	 * 需要调用这个方法。
-	 * @param c 新读入的字符
+	 * It's a very important method that is used for updating the structure of tree after read
+	 * each symbol. Called both during encoding and decoding.
+	 * @param c the next character
 	 */
 	private void updateTree(char c){
 		/*
@@ -98,14 +122,14 @@ public class AdaptiveHuffman {
 		 */
 		Node toBeAdd = null;
 		if ( !isAlreadyExist(c) ){
-			Node innerNode = new Node(null, 1);//将要替代NYT node的新节点，字符全部为null
-			Node newNode = new Node(String.valueOf(c), 1);//存放新字符的新节点
+			Node innerNode = new Node(null, 1);//inner node with null letter
+			Node newNode = new Node(String.valueOf(c), 1);//stores symbol
 			
-			//这一段一定注意指针的连接不要出错
+			//Pay attention to the linking process among nodes.
 			innerNode.left = nytNode;
 			innerNode.right = newNode;
 			innerNode.parent = nytNode.parent;
-			if ( nytNode.parent!=null )//一开始nytnode为根节点，之后都会进入else
+			if ( nytNode.parent!=null )//In the first time the nyt node is root. 
 				nytNode.parent.left = innerNode;
 			else {
 				root = innerNode;
@@ -113,7 +137,7 @@ public class AdaptiveHuffman {
 			nytNode.parent = innerNode;
 			newNode.parent = innerNode;
 
-			//以下两步保证nodeList里面的元素顺序正确
+			//The following two lines assure the right order in nodeList
 			nodeList.add(1, innerNode);
 			nodeList.add(1, newNode);
 			alreadyExist.add(c);
@@ -122,13 +146,13 @@ public class AdaptiveHuffman {
 			toBeAdd = findNode(c);
 		}
 		
-		//循环直到所有的父节点权值都被+1
+		//Loop until all parent nodes are incremented.
 		while ( toBeAdd!=null ) {
 			Node bigNode = findBigNode(toBeAdd.frequency);
 			/**
-			 * 以下两种情况是不能交换的：
-			 * 1.编号最大的节点就是它自身
-			 * 2.其中一个节点为另一个节点的父节点
+			 * The nodes should not be swapped in the following two situations:
+			 * 1.The biggest node is itself.
+			 * 2.The one node is the other's parent node.
 			 */
 			if ( toBeAdd!=bigNode && toBeAdd.parent!=bigNode && bigNode.parent!=toBeAdd)
 				swapNode(toBeAdd, bigNode );
@@ -161,9 +185,9 @@ public class AdaptiveHuffman {
 	}
 
 	/**
-	 * 访问树中的一个节点
-	 * @param p 节点的指针
-	 * @return 如果节点有字符，则返回字符，否则返回null
+	 * Visit a node in the tree
+	 * @param p the pointer to the node
+	 * @return letter if it's a leaf, otherwise null.
 	 */
 	private String visit(Node p) {
 		// TODO Auto-generated method stub
@@ -175,9 +199,10 @@ public class AdaptiveHuffman {
 	}
 
 	/**
-	 * 编码时调用的方法。根据输入字符C返回一个编码。如果该字符已经出现过，则从二叉树中查找；
-	 * 如果该字符是第一次出现，则返回该字符的ASCII码,再加上NEW的编码作为前缀。
+	 * Called when encoding. If the symbol is already existed, look for it in tree. Or else, 
+	 * return the ASCII code of the character with a prefix of code of NEW.
 	 * @param c the input character
+	 * @return a code according to the input character
 	 */
 	private String getCode(char c){
 		tempCode = "";
@@ -207,9 +232,10 @@ public class AdaptiveHuffman {
 	}
 
 	/**
-	 * 交换两个节点。注意不能图方便而交换值，因为交换的时候是连同节点的子树一起交换的。
-	 * @param n1 权值即将+1的节点
-	 * @param n2 块中编号最大的节点
+	 * Swap two nodes. Note that we should swap nodes but not only values, because the subtree
+	 * is also needed to be swapped.
+	 * @param n1 the node of which the frequency is to be incremented.
+	 * @param n2 the biggest node in the block.
 	 */
 	private void swapNode(Node n1, Node n2) {
 		// TODO Auto-generated method stub
@@ -248,10 +274,10 @@ public class AdaptiveHuffman {
 	}
 
 	/**
-	 * 找到权值相同的节点中编号最大的那个。因为节点已经按照从左到右，从下到上的顺序存放在nodeList中了，
-	 * 所以只需从后往前找到第一个权值相同的节点即可
-	 * @param frequency 权值
-	 * @return 找到的节点
+	 * Find the node with biggest index in a certain block. Just look for the first node with the 
+	 * same frequency from the back.
+	 * @param frequency 
+	 * @return the found node
 	 */
 	private Node findBigNode(int frequency) {
 		// TODO Auto-generated method stub
@@ -265,11 +291,10 @@ public class AdaptiveHuffman {
 	}
 	
 	/**
-	 * 一个递归算法，根据树结构生成某个字符的Huffman编码。这个算法并不完美，因为迫不得已用了一个
-	 * 全局变量tempCode。期待更好的算法。
-	 * @param node 开始查找的节点
-	 * @param letter 要生成编码的字符
-	 * @param code 生成的字符
+	 * A recursion function that is used to generate a huffman code of a given symbol.
+	 * @param node the beginning node
+	 * @param letter of which the code to be found
+	 * @param code the generated code
 	 */
 	private void getCodeByTree(Node node, String letter, String code) {
 		// TODO Auto-generated method stub
@@ -288,16 +313,14 @@ public class AdaptiveHuffman {
 	}
 	
 	/**
-	 * 返回一个字符的十进制ASCII码。这个方法主要为了代码的易读性。
-	 * @param c 需要生成ASCII码的字符
-	 * @return c的十进制ASCII码
+	 * Return the ASCII code of the character c. Just for readability.
 	 */
 	public static int getAscii(char c){
 		return (int)c;
 	}
 	
 	/**
-	 * 把一个十进制整数转为一个8位二进制编码
+	 * Convert a decimal integer to a 8-bit binary code.
 	 * @param decimal a integer to be converted
 	 * @return string with 0,1
 	 */
@@ -314,7 +337,7 @@ public class AdaptiveHuffman {
 	}
 	
 	/**
-	 * 计算压缩率。设所有字符的原始编码均为8位ASCII码。
+	 * Calculate the compress rate. Assuming that the original code is 8-bit ASCII code.
 	 * @param text
 	 * @param code
 	 * @return
@@ -350,7 +373,7 @@ public class AdaptiveHuffman {
 	}
 
 	/**
-	 * 以下三个方法都是为了得到统计数据，在算术编码中要用到的。
+	 * The following three methods are for arithmetic coding.
 	 */
 	//Get statistics by the final tree.
 	private void getStatistics() {
@@ -365,9 +388,9 @@ public class AdaptiveHuffman {
 	}
 
 	/**
-	 * 用先序遍历找到树中的所有字符。主要为得到统计数据
-	 * @param node 起始节点
-	 * @param symbolList 字符容器
+	 * Traverse all the node in the tree using preorder.
+	 * @param node the beginning node
+	 * @param symbolList a symbol container
 	 */
 	public static void preOrder(Node node, ArrayList<Symbol> symbolList){
 		if( node!=null ){
@@ -402,18 +425,18 @@ public class AdaptiveHuffman {
 		// TODO Auto-generated method stub
 		
 		/**
-		 * 编码时用这一段代码
+		 * Using when encoding.
 		 */
-		String text = FileHandler.readFile("data/I have a dream.txt", true);
-		AdaptiveHuffman ah = new AdaptiveHuffman( text.toCharArray() );
-		ArrayList<String> code = ah.encode();
-		FileHandler.writeFile("data/ihaveadreaminHuff.txt", catStr(code), true);
-		ah.getStatistics();
-		calCompRate(text, code);
+//		String text = FileHandler.readFile("data/I have a dream.txt", true);
+//		AdaptiveHuffman ah = new AdaptiveHuffman( text.toCharArray() );
+//		ArrayList<String> code = ah.encode();
+//		FileHandler.writeFile("data/ihaveadreaminHuff.txt", catStr(code), true);
+//		ah.getStatistics();
+//		calCompRate(text, code);
 
 		
 		/**
-		 * 解码时用这一段
+		 * Using when decoding.
 		 */
 //		String code = FileHandler.readFile("data/ihaveadreaminHuff.txt", false);
 //		AdaptiveHuffman ah = new AdaptiveHuffman( code.toCharArray() );

@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 /**
- * 这个类包装了一些文件操作的全局静态函数，方便进行文件处理。
+ * This class encapsulates some static method used for file reading and writing.
  * @author Michael
  *
  */

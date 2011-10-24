@@ -24,8 +24,7 @@ public class Symbol implements Comparable<Symbol>{
 	
 	@Override
 	/**
-	 * 这个是借口Comparable的方法，实现了它就可以给Symbol排序，或者说可以方便的调用
-	 * Conllections.sort(List<T>)这个方法。
+	 * It's a method of interface Comparable. We can use method Collections.sort(List<T>) then.
 	 */
 	public int compareTo(Symbol arg0) {
 		// TODO Auto-generated method stub
